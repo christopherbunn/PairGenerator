@@ -148,8 +148,6 @@ class GeneratePairs:
             pair_holding.append(old_pair)
             rev_pairs.append(new_pair)
             num_of_rev_controls += 1
-        while len(pair_holding) != 0:
-            self.label_pairs.append(pair_holding.pop())
         print("Reverse Controls", len(rev_pairs))
         # Nonsense pair - 5% - Control 2
         num_nonsense_pairs = len(self.label_pairs) * nonsense_percentage
