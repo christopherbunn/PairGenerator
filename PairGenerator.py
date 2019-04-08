@@ -92,11 +92,13 @@ class GeneratePairs:
         chosen_labels = []
         # Not randomized pairs - will be randomized and placed into self.label_pairs
         temp_pairs = list()
+        # TODO Choose by over of appearance instead of randomly
         # From all of the available descriptions, choose a subset of max_num_of_random_labels
+        idx = 0
         while len(chosen_labels) < max_num_of_random_labels:
-            idx = random.randint(0, len(all_labels) - 1)
             if all_labels[idx] not in chosen_labels:
                 chosen_labels.append(all_labels[idx])
+            idx += 1
         curr_num_of_pairs = 0
         # From the subset of pairs, create max_num_of_pairs amount of pairs
         for label_l in chosen_labels:
