@@ -104,8 +104,8 @@ class GeneratePairs:
                 if curr_num_of_pairs < max_num_of_pairs:
                     # Add to possible pairs if the chosen descriptions are not the same and
                     # both the same pair and the opposite does not exist
-                    if label_l != label_r and (image, label_r, label_l, "Trial") not in self.label_pairs \
-                            and (image, label_l, label_r, "Trial") not in self.label_pairs:
+                    if label_l != label_r and (image, label_r, label_l, "Trial") not in temp_pairs \
+                            and (image, label_l, label_r, "Trial") not in temp_pairs:
                         temp_pairs.append((image, label_l, label_r, "Trial"))
                         curr_num_of_pairs += 1
         # After the label pairs are created, randomly swap the description between the pairs
@@ -143,6 +143,8 @@ class GeneratePairs:
         num_of_rev_controls = 0
         while len(rev_pairs) < num_rev_pairs:
             old_pair = self.label_pairs.pop(random.randint(0,len(self.label_pairs) - 1))
+            if old_pair in self.label_pairs:
+                print("Still exists in label_pairs reverse")
             old_pair = (old_pair[0], old_pair[1], old_pair[2], "Reverse Control " + str(num_of_rev_controls))
             new_pair = (old_pair[0], old_pair[2], old_pair[1], "Reverse Control " + str(num_of_rev_controls))
             pair_holding.append(old_pair)
@@ -157,6 +159,8 @@ class GeneratePairs:
         new_labels_pos = 0
         while len(nonsense_pairs) < num_nonsense_pairs:
             old_pair = self.label_pairs.pop(random.randint(0,len(self.label_pairs) - 1))
+            if old_pair in self.label_pairs:
+                print("Still exists in label_pairs facts")
             if left_nonsense_pair > 0:  # Left
                 new_pair = (old_pair[0], new_labels[new_labels_pos], old_pair[2], "Nonsense Control - Left")
                 left_nonsense_pair -= 1
