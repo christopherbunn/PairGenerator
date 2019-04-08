@@ -6,20 +6,12 @@ from os import path
 import datetime
 
 # Experiment Global Variables - Should be consistent between runs
-left_key = "1"
-right_key = "2"
-repeat_key = "<Key-space>"
-continue_key = "<Key-space>"
-pause_experiment_key = "<Return>"
-result_directory = "./results/"
 label_pairs_directory = "../New_Assets/LabelPairs/"
-max_repeat = 7
 reverse_percentage = 0.10
 nonsense_percentage = 0.05
 participant_name = ""
 max_num_of_random_labels = 4
 max_num_of_pairs = 6
-break_trial=200
 
 
 class LabelPair:
@@ -39,13 +31,11 @@ class SetParameters:
     def get_params(self):
         def save_parameters():
             global participant_name
-            self.img_path = img_path_box.get()
+            self.extension = file_extension.get()
             self.desc_path = desc_path_box.get()
             self.nonsense_path = nonsense_path_box.get()
             participant_name = res_path_box.get()
             now = datetime.datetime.now()
-            self.res_path = result_directory + participant_name + "-" + str(now.day) + "-" + str(now.month) + "-" + str(now.year) + "-" + \
-                str(now.hour) + ":" + str(now.minute) + ":" + str(now.second) + ".csv"
             self.label_pairs_path = label_pairs_directory + participant_name + "-label_pairs-" + str(now.day) + "-" + str(now.month) + "-" + str(now.year) + "-" + \
                 str(now.hour) + ":" + str(now.minute) + ":" + str(now.second) + ".tsv"
             window.destroy()
@@ -57,22 +47,21 @@ class SetParameters:
         frame.columnconfigure(0, weight=1)
         frame.rowconfigure(0, weight=1)
 
-        field_labels = ["Image Location", "Description Location", "Participant Initials", "Nonsense File Path",
-                        "Number of Images", "Break Between Images (seconds)"]
+        field_labels = ["File Extension (.jpg or .mp4)", "Description Location", "Participant Name", "Nonsense File Path"]
 
-        img_path_box = ttk.StringVar()
+        file_extension = ttk.StringVar()
         desc_path_box = ttk.StringVar()
         res_path_box = ttk.StringVar()
         nonsense_path_box = ttk.StringVar()
 
         tkinter.Label(frame, text=field_labels[0]).grid(row=0, column=0, sticky='E')
-        img_entry = tkinter.Entry(frame, textvariable=img_path_box)
-        img_entry.insert(0, '../New_Assets/Images/BenchmarkIMAGES')
-        img_entry.grid(row=0, column=1, sticky='W')
+        file_ext_entry = tkinter.Entry(frame, textvariable=file_extension)
+        file_ext_entry.insert(0, '.mp4')
+        file_ext_entry.grid(row=0, column=1, sticky='W')
 
         tkinter.Label(frame, text=field_labels[1]).grid(row=1, column=0, sticky='E')
         desc_entry = tkinter.Entry(frame, textvariable=desc_path_box)
-        desc_entry.insert(0, '../New_Assets/Descriptions/training.tsv')
+        desc_entry.insert(0, '../New_Assets/Descriptions/training_video.tsv')
         desc_entry.grid(row=1, column=1, sticky='W')
 
         tkinter.Label(frame, text=field_labels[2]).grid(row=2, column=0, sticky='E')
@@ -89,7 +78,7 @@ class SetParameters:
         window.mainloop()
 
     def __init__(self):
-        self.img_path = ''
+        self.extension = ''
         self.desc_path = ''
         self.res_path = ''
         self.label_pairs_path = ''
@@ -147,13 +136,20 @@ class GeneratePairs:
     def add_control_cases(self, nonsense_path):
         rev_pairs = []
         nonsense_pairs = []
+        pair_holding = [] # Ensures that same pair isnt taken out twice per control
         print("Regular", len(self.label_pairs))
         # Reverse pair - 10% - Control 1
         num_rev_pairs = len(self.label_pairs) * reverse_percentage
+        num_of_rev_controls = 0
         while len(rev_pairs) < num_rev_pairs:
-            old_pair = random.choice(self.label_pairs)
-            new_pair = (old_pair[0], old_pair[2], old_pair[1], "Reverse Control")
+            old_pair = self.label_pairs.pop(random.randint(0,len(self.label_pairs) - 1))
+            old_pair = (old_pair[0], old_pair[1], old_pair[2], "Reverse Control " + str(num_of_rev_controls))
+            new_pair = (old_pair[0], old_pair[2], old_pair[1], "Reverse Control " + str(num_of_rev_controls))
+            pair_holding.append(old_pair)
             rev_pairs.append(new_pair)
+            num_of_rev_controls += 1
+        while len(pair_holding) != 0:
+            self.label_pairs.append(pair_holding.pop())
         print("Reverse Controls", len(rev_pairs))
         # Nonsense pair - 5% - Control 2
         num_nonsense_pairs = len(self.label_pairs) * nonsense_percentage
@@ -162,15 +158,18 @@ class GeneratePairs:
         right_nonsense_pair = num_nonsense_pairs - left_nonsense_pair
         new_labels_pos = 0
         while len(nonsense_pairs) < num_nonsense_pairs:
-            old_pair = random.choice(self.label_pairs)
+            old_pair = self.label_pairs.pop(random.randint(0,len(self.label_pairs) - 1))
             if left_nonsense_pair > 0:  # Left
                 new_pair = (old_pair[0], new_labels[new_labels_pos], old_pair[2], "Nonsense Control - Left")
                 left_nonsense_pair -= 1
             else:
                 new_pair = (old_pair[0], old_pair[1], new_labels[new_labels_pos], "Nonsense Control - Right")
                 right_nonsense_pair -= 1
+            pair_holding.append(old_pair)
             nonsense_pairs.append(new_pair)
             new_labels_pos += 1
+        while len(pair_holding) != 0:
+            self.label_pairs.append(pair_holding.pop())
         print("Nonsense Pairs", len(nonsense_pairs))
         for new_pairs in rev_pairs:
             self.label_pairs.append(new_pairs)
@@ -189,7 +188,12 @@ class GeneratePairs:
         for i in range(0,len(temp), 2):
             desc_row = temp[i]
             type_row = temp[i+1]
-            file_name = 'i' + desc_row[0] + '.jpg'
+            if self.extension == '.jpg':
+                file_name = 'i' + desc_row[0] + '.jpg'
+            elif self.extension == '.mp4':
+                file_name = desc_row[0] + '.mp4'
+            else:
+                print("INVALID EXTENSION. SUPPORT FOR ONLY .jpg OR .mp4")
             self.image_files.append(file_name)
             print(i, desc_row)
             for j in range(len(desc_row)):
@@ -221,6 +225,7 @@ class GeneratePairs:
 
     def __init__(self, in_params):
         self.descriptions = {}
+        self.extension = in_params.extension
         self.image_files = list()
         self.read_desc(in_params.desc_path)
         self.res_path = in_params.res_path
@@ -228,7 +233,6 @@ class GeneratePairs:
         self.my_images = dict()
         self.label_pairs = list()
         for image in self.image_files:
-            full_path = in_params.img_path + '/' + image
             self.get_labels(image)
         self.add_control_cases(in_params.nonsense_path)
         self.write_label_pairs(in_params.label_pairs_path)
