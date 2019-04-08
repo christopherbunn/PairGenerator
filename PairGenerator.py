@@ -7,8 +7,8 @@ import datetime
 
 # Experiment Global Variables - Should be consistent between runs
 label_pairs_directory = "../New_Assets/LabelPairs/"
-reverse_percentage = 0.10
-nonsense_percentage = 0.05
+num_reverse = 36
+num_nonsense = 18
 participant_name = ""
 max_num_of_random_labels = 4
 max_num_of_pairs = 6
@@ -56,12 +56,12 @@ class SetParameters:
 
         tkinter.Label(frame, text=field_labels[0]).grid(row=0, column=0, sticky='E')
         file_ext_entry = tkinter.Entry(frame, textvariable=file_extension)
-        file_ext_entry.insert(0, '.mp4')
+        file_ext_entry.insert(0, '.jpg')
         file_ext_entry.grid(row=0, column=1, sticky='W')
 
         tkinter.Label(frame, text=field_labels[1]).grid(row=1, column=0, sticky='E')
         desc_entry = tkinter.Entry(frame, textvariable=desc_path_box)
-        desc_entry.insert(0, '../New_Assets/Descriptions/training_video.tsv')
+        desc_entry.insert(0, '../New_Assets/Descriptions/training_images.tsv')
         desc_entry.grid(row=1, column=1, sticky='W')
 
         tkinter.Label(frame, text=field_labels[2]).grid(row=2, column=0, sticky='E')
@@ -139,7 +139,7 @@ class GeneratePairs:
         pair_holding = [] # Ensures that same pair isnt taken out twice per control
         print("Regular", len(self.label_pairs))
         # Reverse pair - 10% - Control 1
-        num_rev_pairs = len(self.label_pairs) * reverse_percentage
+        num_rev_pairs = num_reverse
         num_of_rev_controls = 0
         while len(rev_pairs) < num_rev_pairs:
             old_pair = self.label_pairs.pop(random.randint(0,len(self.label_pairs) - 1))
@@ -150,7 +150,7 @@ class GeneratePairs:
             num_of_rev_controls += 1
         print("Reverse Controls", len(rev_pairs))
         # Nonsense pair - 5% - Control 2
-        num_nonsense_pairs = len(self.label_pairs) * nonsense_percentage
+        num_nonsense_pairs = num_nonsense
         new_labels = self.get_nonsense_list(num_nonsense_pairs, nonsense_path)
         left_nonsense_pair = num_nonsense_pairs / 2
         right_nonsense_pair = num_nonsense_pairs - left_nonsense_pair
@@ -211,7 +211,6 @@ class GeneratePairs:
                                         quotechar='\"', quoting=csv.QUOTE_MINIMAL)
                 filewriter.writerow(['Image Name', 'Left Label', 'Left Description', 'Right Label', 'Right Description', 'Pair Type'])
         with open(label_pairs_path, 'a') as csvfile:
-            print(self.label_pairs)
             filewriter = csv.writer(csvfile, delimiter='\t',
                                     quotechar='\"', quoting=csv.QUOTE_MINIMAL)
             for pair in self.label_pairs[::-1]: # Reverse needed since label_pairs is treated as a queue in experiment
